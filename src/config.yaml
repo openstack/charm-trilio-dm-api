@@ -1,0 +1,52 @@
+---
+options:
+  openstack-origin:
+    type: string
+    default: bionic-stein
+    description: |
+      Repository from which to install. May be one of the following:
+      distro (default), ppa:somecustom/ppa, a deb url sources entry or a
+      supported Ubuntu Cloud Archive (UCA) release pocket.
+      .
+      Supported UCA sources include:
+      .
+      cloud:<series>-<openstack-release>
+      cloud:<series>-<openstack-release>/updates
+      cloud:<series>-<openstack-release>/staging
+      cloud:<series>-<openstack-release>/proposed
+      .
+      For series=Precise we support UCA for openstack-release=
+         * icehouse
+      .
+      For series=Trusty we support UCA for openstack-release=
+         * juno
+         * kilo
+         * ...
+      .
+      NOTE: updating this setting to a source that is known to provide
+      a later version of OpenStack will trigger a software upgrade.
+      .
+  python-version:
+    type: int
+    default: 3
+    description: Openstack base python version(2 or 3)
+  triliovault-pkg-source:
+    type: string
+    default: "deb [trusted=yes] https://apt.fury.io/triliodata-3-4/ /"
+    description: Repository address of triliovault packages
+  openstack-pkg-source:
+    type: string
+    default: "cloud-archive:queens"
+    description: Repository address of openstack packages
+  public-port:
+    type: int
+    default: 8784
+    description: DataMover API public endpoint port
+  internal-port:
+    type: int
+    default: 8784
+    description: DataMover API internal endpoint port
+  admin-port:
+    type: int
+    default: 8784
+    description: DataMover API admin endpoint port

@@ -1,0 +1,13 @@
+[Unit]
+Description=Datamover API service
+
+[Service]
+User = dmapi
+Group = dmapi
+Type = Simple
+ExecStart=/usr/bin/dmapi-api
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

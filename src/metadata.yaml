@@ -1,0 +1,24 @@
+---
+name: trilio-dm-api
+maintainer: Trilio Support <support@trilio.io>
+summary: TrilioVault Data Mover API
+description: | 
+  API service of TrilioVault Datamover 
+tags:
+  - openstack
+  - storage
+  - backup
+  - TVMv3.4
+requires:
+  shared-db:
+    interface: mysql-shared
+  amqp:
+    interface: rabbitmq
+  identity-service:
+    interface: keystone
+provides:
+  dm-api:
+    interface: dm-api
+series:
+  - xenial
+  - bionic
