@@ -1,18 +1,34 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import collections
 import os
-import charmhelpers.contrib.openstack.utils as ch_utils
-import charms_openstack.charm
-import charms_openstack.adapters
+import shutil
+
+import charms_openstack.charm as charm
+import charms_openstack.adapters as adapters
 import charms_openstack.ip as os_ip
 
-from charmhelpers.core.hookenv import (
-    config
-)
+import charmhelpers.contrib.openstack.utils as ch_utils
+import charmhelpers.core.hookenv as hookenv
+import charmhelpers.core.host as ch_host
 
 DMAPI_DIR = '/etc/dmapi'
 DMAPI_CONF = os.path.join(DMAPI_DIR, 'dmapi.conf')
+DMAPI_USR = 'dmapi'
+DMAPI_GRP = 'dmapi'
 
 
-class DmapiDBAdapter(charms_openstack.adapters.DatabaseRelationAdapter):
+class DmapiDBAdapter(adapters.DatabaseRelationAdapter):
     """Get database URIs for the two nova databases"""
 
     @property
@@ -26,16 +42,19 @@ class DmapiDBAdapter(charms_openstack.adapters.DatabaseRelationAdapter):
         return self.get_uri(prefix='dmapinovaapi')
 
 
-class DmapiAdapters(charms_openstack.adapters.OpenStackAPIRelationAdapters):
+class DmapiAdapters(adapters.OpenStackAPIRelationAdapters):
     """
     Adapters class for the Data Mover API charm.
     """
     relation_adapters = {
+        'amqp': adapters.RabbitMQRelationAdapter,
+        'cluster': adapters.PeerHARelationAdapter,
+        'coordinator_memcached': adapters.MemcacheRelationAdapter,
         'shared_db': DmapiDBAdapter,
     }
 
 
-class DmapiCharm(charms_openstack.charm.HAOpenStackCharm):
+class DmapiCharm(charm.HAOpenStackCharm):
 
     # Internal name of charm + keystone endpoint
     service_name = 'dmapi'
@@ -44,27 +63,25 @@ class DmapiCharm(charms_openstack.charm.HAOpenStackCharm):
     # First release supported
     release = 'queens'
 
-    # Packages the service needs installed
-    if config('python-version') == 3:
-        packages = ['python3-nova', 'python3-dmapi']
-    else:
-        packages = ['python-nova', 'dmapi']
-
     # Init services the charm manages
-    services = ['tvault-datamover-api']
+    services = [
+        'tvault-datamover-api'
+    ]
 
     # Ports that need exposing.
     default_service = 'dmapi-api'
     api_ports = {
         'dmapi-api': {
-            os_ip.PUBLIC: config('public-port'),
-            os_ip.ADMIN: config('admin-port'),
-            os_ip.INTERNAL: config('internal-port'),
+            os_ip.PUBLIC: hookenv.config('public-port'),
+            os_ip.ADMIN: hookenv.config('admin-port'),
+            os_ip.INTERNAL: hookenv.config('internal-port'),
         }
     }
 
-    # Database sync command used to initalise the schema.
-    sync_cmd = []
+    # Database sync command used to init the schema.
+    sync_cmd = [
+        'true'
+    ]
 
     # The restart map defines which services should be restarted when a given
     # file changes
@@ -75,14 +92,29 @@ class DmapiCharm(charms_openstack.charm.HAOpenStackCharm):
     adapters_class = DmapiAdapters
 
     # Resource when in HA mode
-    ha_resources = ['vips', 'haproxy']
+    ha_resources = [
+        'vips',
+        'haproxy'
+    ]
 
     # DataMover requires a message queue, database and keystone to work,
     # so these are the 'required' relationships for the service to
     # have an 'active' workload status.  'required_relations' is used in
     # the assess_status() functionality to determine what the current
     # workload status of the charm is.
-    required_relations = ['amqp', 'shared-db', 'identity-service']
+    required_relations = [
+        'amqp',
+        'shared-db',
+        'identity-service'
+    ]
+
+    user = "root"
+    group = DMAPI_GRP
+
+    package_codenames = {
+        "dmapi": collections.OrderedDict([("3", "stein")]),
+        "python3-dmapi": collections.OrderedDict([("3", "stein")])
+    }
 
     def __init__(self, release=None, **kwargs):
         """Custom initialiser for class
@@ -93,74 +125,82 @@ class DmapiCharm(charms_openstack.charm.HAOpenStackCharm):
             release = ch_utils.os_release('python-keystonemiddleware')
         super(DmapiCharm, self).__init__(release=release, **kwargs)
 
+    # TODO: drop once package does this itself
+    def _add_user(self):
+        """Setup required user and group for data-mover-api"""
+        try:
+            ch_host.add_group(DMAPI_GRP, system_group=True)
+            ch_host.adduser(DMAPI_USR, password=None,
+                            shell='/bin/bash', system_user=True)
+            ch_host.add_user_to_group(DMAPI_USR, DMAPI_GRP)
+        except Exception:
+            pass
+
+    # TODO: drop once package does this itself
+    def _install_systemd_configuration(self):
+        """Install systemd configuration for data-mover API"""
+        shutil.copyfile('files/trilio/tvault-datamover-api.service '
+                        '/etc/systemd/system')
+        ch_host.chownr('/var/log/dmapi',
+                       DMAPI_USR, DMAPI_GRP)
+        ch_host.mkdir('/var/cache/dmapi',
+                      DMAPI_USR, DMAPI_GRP, perms=493)
+        ch_host.chownr('/var/log/dmapi',
+                       DMAPI_USR, DMAPI_GRP)
+        ch_host.service_enable('tvault-datamover-api')
+
+    def configure_source(self):
+        with open("/etc/apt/sources.list.d/"
+                  "trilio-gemfury-sources.list", "w") as tsources:
+            tsources.write(hookenv.config("triliovault-pkg-source"))
+        super().configure_source()
+
     def install(self):
-        """Customise the installation, configure the source and then call the
-        parent install() method to install the packages
-        """
-        self.configure_source()
-        # and do the actual install
-        super(DmapiCharm, self).install()
+        self._add_user()
+        self._install_systemd_configuration()
+        super().install()
+
+    def get_amqp_credentials(self):
+        return ("dmapi", "openstack")
+
+    def get_database_setup(self):
+        return [
+            {
+                "database": 'nova',
+                "username": 'nova',
+                "prefix": 'dmapinova',
+            },
+            {
+                "database": 'nova_api',
+                "username": 'nova',
+                "prefix": 'dmapinovaapi',
+            },
+        ]
 
     @property
     def public_url(self):
-        return super().public_url + "/v2"
+        return "{}/v2".format(super().public_url)
 
     @property
     def admin_url(self):
-        return super().admin_url + "/v2"
+        return "{}/v2".format(super().admin_url)
 
     @property
     def internal_url(self):
-        return super().internal_url + "/v2"
+        return "{}/v2".format(super().internal_url)
 
+    @property
+    def packages(self):
+        if hookenv.config('python-version') == 3:
+            return ['python3-nova', 'python3-dmapi']
+        return ['python-nova', 'dmapi']
 
-def install():
-    """Use the singleton from the DmapiCharm to install the packages on the
-    unit
-    """
-    DmapiCharm.singleton.install()
+    @property
+    def version_package(self):
+        if hookenv.config('python-version') == 3:
+            return 'python3-dmapi'
+        return 'dmapi'
 
-
-def restart_all():
-    """Use the singleton from the DmapiCharm to restart services on the
-    unit
-    """
-    DmapiCharm.singleton.restart_all()
-
-
-def setup_endpoint(keystone):
-    """When the keystone interface connects, register this unit in the keystone
-    catalogue.
-    """
-    charm = DmapiCharm.singleton
-    keystone.register_endpoints(charm.service_name,
-                                charm.region,
-                                charm.public_url,
-                                charm.internal_url,
-                                charm.admin_url)
-
-
-def render_configs(interfaces_list):
-    """Using a list of interfaces, render the configs and, if they have
-    changes, restart the services on the unit.
-    """
-    DmapiCharm.singleton.render_with_interfaces(interfaces_list)
-
-
-def assess_status():
-    """Just call the DmapiCharm.singleton.assess_status() command to update
-    status on the unit.
-    """
-    DmapiCharm.singleton.assess_status()
-
-
-def configure_ha_resources(hacluster):
-    """Use the singleton from the DmapiCharm to run configure_ha_resources
-    """
-    DmapiCharm.singleton.configure_ha_resources(hacluster)
-
-
-def configure_ssl():
-    """Use the singleton from the DmapiCharm to run configure_ssl
-    """
-    DmapiCharm.singleton.configure_ssl()
+    @property
+    def release_pkg(self):
+        return self.version_package
