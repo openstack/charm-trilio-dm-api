@@ -7,19 +7,14 @@ TrilioVault Data Mover API provides API service for TrilioVault Datamover
 TrilioVault Data Mover API relies on services from mysql, rabbitmq-server
 and keystone charms. Steps to deploy the charm:
 
-juju deploy trilio-dm-api
+    juju deploy trilio-dm-api
+    juju deploy keystone
+    juju deploy mysql
+    juju deploy rabbitmq-server
 
-juju deploy keystone
-
-juju deploy mysql
-
-juju deploy rabbitmq-server
-
-juju add-relation trilio-dm-api rabbitmq-server
-
-juju add-relation trilio-dm-api mysql
-
-juju add-relation trilio-dm-api keystone
+    juju add-relation trilio-dm-api rabbitmq-server
+    juju add-relation trilio-dm-api mysql
+    juju add-relation trilio-dm-api keystone
 
 # Configuration
 
