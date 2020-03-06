@@ -10,10 +10,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
 import mock
 
 import reactive.dmapi_handlers as handlers
+
+import charms_openstack.test_utils as test_utils
 
 _when_args = {}
 _when_not_args = {}
@@ -36,7 +37,7 @@ def mock_hook_factory(d):
     return mock_hook
 
 
-class TestDmapiHandlers(unittest.TestCase):
+class TestDmapiHandlers(test_utils.PatchHelper):
     @classmethod
     def setUpClass(cls):
         cls._patched_when = mock.patch(
@@ -126,5 +127,15 @@ class TestDmapiHandlers(unittest.TestCase):
                 )
 
     def test_render(self):
-        pass
-        # handlers.render_config('args')
+        dmapi_charm = mock.MagicMock()
+        self.patch_object(
+            handlers.charm, "provide_charm_instance", new=mock.MagicMock()
+        )
+        self.provide_charm_instance().__enter__.return_value = dmapi_charm
+        self.provide_charm_instance().__exit__.return_value = None
+        args = "args"
+        handlers.render_config(args)
+        dmapi_charm.upgrade_if_available.assert_called_once_with((args,))
+        dmapi_charm.render_with_interfaces.assert_called_once_with((args,))
+        dmapi_charm.configure_tls.assert_called_once_with()
+        dmapi_charm.assess_status.assert_called_once_with()
