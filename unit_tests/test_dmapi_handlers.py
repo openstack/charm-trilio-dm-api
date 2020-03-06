@@ -20,9 +20,7 @@ _when_not_args = {}
 
 
 def mock_hook_factory(d):
-
     def mock_hook(*args, **kwargs):
-
         def inner(f):
             # remember what we were passed.  Note that we can't actually
             # determine the class we're attached to, as the decorator only gets
@@ -32,19 +30,22 @@ def mock_hook_factory(d):
             except KeyError:
                 d[f.__name__] = [dict(args=args, kwargs=kwargs)]
             return f
+
         return inner
+
     return mock_hook
 
 
 class TestDmapiHandlers(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-        cls._patched_when = mock.patch('charms.reactive.when',
-                                       mock_hook_factory(_when_args))
+        cls._patched_when = mock.patch(
+            "charms.reactive.when", mock_hook_factory(_when_args)
+        )
         cls._patched_when_started = cls._patched_when.start()
-        cls._patched_when_not = mock.patch('charms.reactive.when_not',
-                                           mock_hook_factory(_when_not_args))
+        cls._patched_when_not = mock.patch(
+            "charms.reactive.when_not", mock_hook_factory(_when_not_args)
+        )
         cls._patched_when_not_started = cls._patched_when_not.start()
         # force requires to rerun the mock_hook decorator:
         # try except is Python2/Python3 compatibility as Python3 has moved
@@ -53,6 +54,7 @@ class TestDmapiHandlers(unittest.TestCase):
             reload(handlers)
         except NameError:
             import importlib
+
             importlib.reload(handlers)
 
     @classmethod
@@ -68,6 +70,7 @@ class TestDmapiHandlers(unittest.TestCase):
             reload(handlers)
         except NameError:
             import importlib
+
             importlib.reload(handlers)
 
     def setUp(self):
@@ -90,35 +93,38 @@ class TestDmapiHandlers(unittest.TestCase):
         self._patches_start[attr] = started
         setattr(self, attr, started)
 
-
     def test_registered_hooks(self):
         # test that the hooks actually registered the relation expressions that
         # are meaningful for this interface: this is to handle regressions.
         # The keys are the function names that the hook attaches to.
         when_patterns = {
-            'render_config': (
-                'shared-db.available',
-                'identity-service.available',
-                'amqp.available'
+            "render_config": (
+                "shared-db.available",
+                "identity-service.available",
+                "amqp.available",
             ),
-            'init_db': ('config.rendered', ),
-            'cluster_connected': ('ha.connected', ),
+            "init_db": ("config.rendered",),
+            "cluster_connected": ("ha.connected",),
         }
         when_not_patterns = {}
         # check the when hooks are attached to the expected functions
-        for t, p in [(_when_args, when_patterns),
-                     (_when_not_args, when_not_patterns)]:
+        for t, p in [
+            (_when_args, when_patterns),
+            (_when_not_args, when_not_patterns),
+        ]:
             for f, args in t.items():
                 # check that function is in patterns
-                self.assertTrue(f in p.keys(),
-                                "{} not found".format(f))
+                self.assertTrue(f in p.keys(), "{} not found".format(f))
                 # check that the lists are equal
                 l = []
                 for a in args:
-                    l += a['args'][:]
-                self.assertEqual(sorted(l), sorted(p[f]),
-                                 "{}: incorrect state registration".format(f))
+                    l += a["args"][:]
+                self.assertEqual(
+                    sorted(l),
+                    sorted(p[f]),
+                    "{}: incorrect state registration".format(f),
+                )
 
     def test_render(self):
         pass
-        #handlers.render_config('args')
+        # handlers.render_config('args')
