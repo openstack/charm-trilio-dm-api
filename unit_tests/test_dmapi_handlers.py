@@ -116,11 +116,11 @@ class TestDmapiHandlers(unittest.TestCase):
                 # check that function is in patterns
                 self.assertTrue(f in p.keys(), "{} not found".format(f))
                 # check that the lists are equal
-                l = []
+                lst = []
                 for a in args:
-                    l += a["args"][:]
+                    lst += a["args"][:]
                 self.assertEqual(
-                    sorted(l),
+                    sorted(lst),
                     sorted(p[f]),
                     "{}: incorrect state registration".format(f),
                 )

@@ -15,7 +15,7 @@ import charms.reactive as reactive
 
 # This charm's library contains all of the handler code associated with
 # dmapi
-import charm.openstack.dmapi as dmapi  #noqa
+import charm.openstack.dmapi as dmapi  # noqa
 
 charm.use_defaults(
     "charm.installed",
