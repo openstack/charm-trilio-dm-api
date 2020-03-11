@@ -1,6 +1,7 @@
 # Overview
 
-TrilioVault Data Mover API provides API service for TrilioVault Datamover
+This charm provides the TrilioVault Data Mover API service which forms
+part of the [TrilioVault Cloud Backup solution][trilio.io].
 
 # Usage
 
@@ -16,18 +17,9 @@ and keystone charms. Steps to deploy the charm:
     juju add-relation trilio-dm-api mysql
     juju add-relation trilio-dm-api keystone
 
-# Configuration
+# Bugs
 
-python-version: "Openstack base python version(2 or 3)"
+Please report bugs on [Launchpad][lp-bugs-charm-trilio-dm-api].
 
-NOTE - Default value is set to "3". Please ensure to update this based on python version since installing
-       python3 packages on python2 based setup might have unexpected impact.
-
-TrilioVault Packages are downloaded from the repository added in below config parameter. Please change this only if you wish to download
-TrilioVault Packages from a different source.
-
-triliovault-pkg-source: Repository address of triliovault packages
-
-# Contact Information
-
-Trilio Support <support@trilio.com>
+[lp-bugs-charm-trilio-dm-api]: https://bugs.launchpad.net/charm-trilio-dm-api/+filebug
+[trilio.io]: https://www.trilio.io/triliovault/openstack
