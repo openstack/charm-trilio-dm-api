@@ -13,6 +13,7 @@
 import collections
 import os
 import shutil
+import subprocess
 
 import charms_openstack.charm as charm
 import charms_openstack.adapters as adapters
@@ -22,10 +23,10 @@ import charmhelpers.contrib.openstack.utils as ch_utils
 import charmhelpers.core.hookenv as hookenv
 import charmhelpers.core.host as ch_host
 
-DMAPI_DIR = '/etc/dmapi'
-DMAPI_CONF = os.path.join(DMAPI_DIR, 'dmapi.conf')
-DMAPI_USR = 'dmapi'
-DMAPI_GRP = 'dmapi'
+DMAPI_DIR = "/etc/dmapi"
+DMAPI_CONF = os.path.join(DMAPI_DIR, "dmapi.conf")
+DMAPI_USR = "dmapi"
+DMAPI_GRP = "dmapi"
 
 
 class DmapiDBAdapter(adapters.DatabaseRelationAdapter):
@@ -34,86 +35,76 @@ class DmapiDBAdapter(adapters.DatabaseRelationAdapter):
     @property
     def dmapi_nova_uri(self):
         """URI for nova DB"""
-        return self.get_uri(prefix='dmapinova')
+        return self.get_uri(prefix="dmapinova")
 
     @property
     def dmapi_nova_api_uri(self):
         """URI for nova_api DB"""
-        return self.get_uri(prefix='dmapinovaapi')
+        return self.get_uri(prefix="dmapinovaapi")
 
 
 class DmapiAdapters(adapters.OpenStackAPIRelationAdapters):
     """
     Adapters class for the Data Mover API charm.
     """
+
     relation_adapters = {
-        'amqp': adapters.RabbitMQRelationAdapter,
-        'cluster': adapters.PeerHARelationAdapter,
-        'coordinator_memcached': adapters.MemcacheRelationAdapter,
-        'shared_db': DmapiDBAdapter,
+        "amqp": adapters.RabbitMQRelationAdapter,
+        "cluster": adapters.PeerHARelationAdapter,
+        "coordinator_memcached": adapters.MemcacheRelationAdapter,
+        "shared_db": DmapiDBAdapter,
     }
 
 
 class DmapiCharm(charm.HAOpenStackCharm):
 
     # Internal name of charm + keystone endpoint
-    service_name = 'dmapi'
-    name = 'trilio-dm-api'
+    service_name = "dmapi"
+    name = "trilio-dm-api"
 
     # First release supported
-    release = 'queens'
+    release = "queens"
 
     # Init services the charm manages
-    services = [
-        'tvault-datamover-api'
-    ]
+    services = ["tvault-datamover-api"]
 
     # Ports that need exposing.
-    default_service = 'dmapi-api'
+    default_service = "dmapi-api"
     api_ports = {
-        'dmapi-api': {
-            os_ip.PUBLIC: hookenv.config('public-port'),
-            os_ip.ADMIN: hookenv.config('admin-port'),
-            os_ip.INTERNAL: hookenv.config('internal-port'),
+        "dmapi-api": {
+            os_ip.PUBLIC: hookenv.config("public-port"),
+            os_ip.ADMIN: hookenv.config("admin-port"),
+            os_ip.INTERNAL: hookenv.config("internal-port"),
         }
     }
 
     # Database sync command used to init the schema.
-    sync_cmd = [
-        'true'
-    ]
+    sync_cmd = ["true"]
 
     # The restart map defines which services should be restarted when a given
     # file changes
-    restart_map = {
-        DMAPI_CONF: services,
-    }
+    restart_map = {DMAPI_CONF: services}
 
     adapters_class = DmapiAdapters
 
     # Resource when in HA mode
-    ha_resources = [
-        'vips',
-        'haproxy'
-    ]
+    ha_resources = ["vips", "haproxy"]
+
+    service_type = "dmapi"
 
     # DataMover requires a message queue, database and keystone to work,
     # so these are the 'required' relationships for the service to
     # have an 'active' workload status.  'required_relations' is used in
     # the assess_status() functionality to determine what the current
     # workload status of the charm is.
-    required_relations = [
-        'amqp',
-        'shared-db',
-        'identity-service'
-    ]
+    required_relations = ["amqp", "shared-db", "identity-service"]
 
     user = "root"
     group = DMAPI_GRP
 
     package_codenames = {
         "dmapi": collections.OrderedDict([("3", "stein")]),
-        "python3-dmapi": collections.OrderedDict([("3", "stein")])
+        "python3-dmapi": collections.OrderedDict([("3", "stein")]),
     }
 
     def __init__(self, release=None, **kwargs):
@@ -122,7 +113,7 @@ class DmapiCharm(charm.HAOpenStackCharm):
         ch_utils.os_release() function.
         """
         if release is None:
-            release = ch_utils.os_release('python-keystonemiddleware')
+            release = ch_utils.os_release("python-keystonemiddleware")
         super(DmapiCharm, self).__init__(release=release, **kwargs)
 
     # TODO: drop once package does this itself
@@ -130,8 +121,9 @@ class DmapiCharm(charm.HAOpenStackCharm):
         """Setup required user and group for data-mover-api"""
         try:
             ch_host.add_group(DMAPI_GRP, system_group=True)
-            ch_host.adduser(DMAPI_USR, password=None,
-                            shell='/bin/bash', system_user=True)
+            ch_host.adduser(
+                DMAPI_USR, password=None, shell="/bin/bash", system_user=True
+            )
             ch_host.add_user_to_group(DMAPI_USR, DMAPI_GRP)
         except Exception:
             pass
@@ -139,19 +131,19 @@ class DmapiCharm(charm.HAOpenStackCharm):
     # TODO: drop once package does this itself
     def _install_systemd_configuration(self):
         """Install systemd configuration for data-mover API"""
-        shutil.copyfile('files/trilio/tvault-datamover-api.service '
-                        '/etc/systemd/system')
-        ch_host.chownr('/var/log/dmapi',
-                       DMAPI_USR, DMAPI_GRP)
-        ch_host.mkdir('/var/cache/dmapi',
-                      DMAPI_USR, DMAPI_GRP, perms=493)
-        ch_host.chownr('/var/log/dmapi',
-                       DMAPI_USR, DMAPI_GRP)
-        ch_host.service_enable('tvault-datamover-api')
+        shutil.copy(
+            "files/trilio/tvault-datamover-api.service", "/etc/systemd/system"
+        )
+        ch_host.chownr("/var/log/dmapi", DMAPI_USR, DMAPI_GRP)
+        ch_host.mkdir("/var/cache/dmapi", DMAPI_USR, DMAPI_GRP, perms=493)
+        ch_host.chownr("/var/log/dmapi", DMAPI_USR, DMAPI_GRP)
+        subprocess.check_call(["systemctl", "daemon-reload"])
+        subprocess.check_call(["systemctl", "enable", "tvault-datamover-api"])
 
     def configure_source(self):
-        with open("/etc/apt/sources.list.d/"
-                  "trilio-gemfury-sources.list", "w") as tsources:
+        with open(
+            "/etc/apt/sources.list.d/" "trilio-gemfury-sources.list", "w"
+        ) as tsources:
             tsources.write(hookenv.config("triliovault-pkg-source"))
         super().configure_source()
 
@@ -165,15 +157,11 @@ class DmapiCharm(charm.HAOpenStackCharm):
 
     def get_database_setup(self):
         return [
+            {"database": "nova", "username": "nova", "prefix": "dmapinova"},
             {
-                "database": 'nova',
-                "username": 'nova',
-                "prefix": 'dmapinova',
-            },
-            {
-                "database": 'nova_api',
-                "username": 'nova',
-                "prefix": 'dmapinovaapi',
+                "database": "nova_api",
+                "username": "nova",
+                "prefix": "dmapinovaapi",
             },
         ]
 
@@ -191,15 +179,15 @@ class DmapiCharm(charm.HAOpenStackCharm):
 
     @property
     def packages(self):
-        if hookenv.config('python-version') == 3:
-            return ['python3-nova', 'python3-dmapi']
-        return ['python-nova', 'dmapi']
+        if hookenv.config("python-version") == 3:
+            return ["python3-nova", "python3-dmapi"]
+        return ["python-nova", "dmapi"]
 
     @property
     def version_package(self):
-        if hookenv.config('python-version') == 3:
-            return 'python3-dmapi'
-        return 'dmapi'
+        if hookenv.config("python-version") == 3:
+            return "python3-dmapi"
+        return "dmapi"
 
     @property
     def release_pkg(self):
