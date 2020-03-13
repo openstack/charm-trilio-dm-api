@@ -25,6 +25,7 @@ charm.use_defaults(
     "identity-service.available",  # enables SSL support
     "config.changed",
     "update-status",
+    "certificates.available",
 )
 
 
@@ -38,7 +39,6 @@ def render_config(*args):
     with charm.provide_charm_instance() as charm_class:
         charm_class.upgrade_if_available(args)
         charm_class.render_with_interfaces(args)
-        charm_class.configure_tls()
         charm_class.assess_status()
     reactive.set_state("config.rendered")
 
