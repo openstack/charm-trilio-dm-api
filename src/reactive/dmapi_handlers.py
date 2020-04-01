@@ -26,6 +26,7 @@ charm.use_defaults(
     "config.changed",
     "update-status",
     "certificates.available",
+    "cluster.available",
 )
 
 
