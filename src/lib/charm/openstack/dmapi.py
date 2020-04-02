@@ -12,8 +12,6 @@
 
 import collections
 import os
-import shutil
-import subprocess
 
 import charms_openstack.charm as charm
 import charms_openstack.adapters as adapters
@@ -21,12 +19,9 @@ import charms_openstack.ip as os_ip
 
 import charmhelpers.contrib.openstack.utils as ch_utils
 import charmhelpers.core.hookenv as hookenv
-import charmhelpers.core.host as ch_host
 
 DMAPI_DIR = "/etc/dmapi"
 DMAPI_CONF = os.path.join(DMAPI_DIR, "dmapi.conf")
-DMAPI_USR = "dmapi"
-DMAPI_GRP = "dmapi"
 
 
 class DmapiDBAdapter(adapters.DatabaseRelationAdapter):
@@ -100,7 +95,7 @@ class DmapiCharm(charm.HAOpenStackCharm):
     required_relations = ["amqp", "shared-db", "identity-service"]
 
     user = "root"
-    group = DMAPI_GRP
+    group = "dmapi"
 
     package_codenames = {
         "dmapi": collections.OrderedDict([("3", "stein")]),
@@ -116,41 +111,12 @@ class DmapiCharm(charm.HAOpenStackCharm):
             release = ch_utils.os_release("python-keystonemiddleware")
         super(DmapiCharm, self).__init__(release=release, **kwargs)
 
-    # TODO: drop once package does this itself
-    def _add_user(self):
-        """Setup required user and group for data-mover-api"""
-        try:
-            ch_host.add_group(DMAPI_GRP, system_group=True)
-            ch_host.adduser(
-                DMAPI_USR, password=None, shell="/bin/bash", system_user=True
-            )
-            ch_host.add_user_to_group(DMAPI_USR, DMAPI_GRP)
-        except Exception:
-            pass
-
-    # TODO: drop once package does this itself
-    def _install_systemd_configuration(self):
-        """Install systemd configuration for data-mover API"""
-        shutil.copy(
-            "files/trilio/tvault-datamover-api.service", "/etc/systemd/system"
-        )
-        ch_host.chownr("/var/log/dmapi", DMAPI_USR, DMAPI_GRP)
-        ch_host.mkdir("/var/cache/dmapi", DMAPI_USR, DMAPI_GRP, perms=493)
-        ch_host.chownr("/var/log/dmapi", DMAPI_USR, DMAPI_GRP)
-        subprocess.check_call(["systemctl", "daemon-reload"])
-        subprocess.check_call(["systemctl", "enable", "tvault-datamover-api"])
-
     def configure_source(self):
         with open(
             "/etc/apt/sources.list.d/" "trilio-gemfury-sources.list", "w"
         ) as tsources:
             tsources.write(hookenv.config("triliovault-pkg-source"))
         super().configure_source()
-
-    def install(self):
-        self._add_user()
-        self._install_systemd_configuration()
-        super().install()
 
     def get_amqp_credentials(self):
         return ("dmapi", "openstack")
