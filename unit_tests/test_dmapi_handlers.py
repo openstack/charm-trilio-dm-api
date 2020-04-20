@@ -137,5 +137,4 @@ class TestDmapiHandlers(test_utils.PatchHelper):
         handlers.render_config(args)
         dmapi_charm.upgrade_if_available.assert_called_once_with((args,))
         dmapi_charm.render_with_interfaces.assert_called_once_with((args,))
-        dmapi_charm.configure_tls.assert_called_once_with()
         dmapi_charm.assess_status.assert_called_once_with()

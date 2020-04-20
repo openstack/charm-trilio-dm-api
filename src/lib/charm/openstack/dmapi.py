@@ -99,7 +99,9 @@ class DmapiCharm(charm.HAOpenStackCharm):
 
     package_codenames = {
         "dmapi": collections.OrderedDict([("3", "stein")]),
-        "python3-dmapi": collections.OrderedDict([("3", "stein")]),
+        "python3-dmapi": collections.OrderedDict(
+            [("3", "stein"), ("4", "train")]
+        ),
     }
 
     def __init__(self, release=None, **kwargs):
