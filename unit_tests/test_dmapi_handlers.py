@@ -18,6 +18,7 @@ import charms_openstack.test_utils as test_utils
 
 _when_args = {}
 _when_not_args = {}
+_when_any_args = {}
 
 
 def mock_hook_factory(d):
@@ -48,6 +49,10 @@ class TestDmapiHandlers(test_utils.PatchHelper):
             "charms.reactive.when_not", mock_hook_factory(_when_not_args)
         )
         cls._patched_when_not_started = cls._patched_when_not.start()
+        cls._patched_when_any = mock.patch(
+            "charms.reactive.when_any", mock_hook_factory(_when_any_args)
+        )
+        cls._patched_when_any_started = cls._patched_when_any.start()
         # force requires to rerun the mock_hook decorator:
         # try except is Python2/Python3 compatibility as Python3 has moved
         # reload to importlib.
@@ -108,10 +113,17 @@ class TestDmapiHandlers(test_utils.PatchHelper):
             "cluster_connected": ("ha.connected",),
         }
         when_not_patterns = {}
+        when_any_patterns = {
+            "install_source_changed": (
+                "config.changed.triliovault-pkg-source",
+                "config.changed.openstack-origin"
+            )
+        }
         # check the when hooks are attached to the expected functions
         for t, p in [
             (_when_args, when_patterns),
             (_when_not_args, when_not_patterns),
+            (_when_any_args, when_any_patterns),
         ]:
             for f, args in t.items():
                 # check that function is in patterns

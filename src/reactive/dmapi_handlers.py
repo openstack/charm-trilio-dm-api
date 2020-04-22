@@ -57,3 +57,10 @@ def cluster_connected(hacluster):
     with charm.provide_charm_instance() as charm_class:
         charm_class.configure_ha_resources(hacluster)
         charm_class.assess_status()
+
+
+@reactive.when_any("config.changed.triliovault-pkg-source",
+                   "config.changed.openstack-origin")
+def install_source_changed():
+    """Trigger re-install of charm if source configuration options change"""
+    reactive.clear_flag("charm.installed")
