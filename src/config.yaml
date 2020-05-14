@@ -2,7 +2,7 @@
 options:
   openstack-origin:
     type: string
-    default: bionic-stein
+    default: cloud:bionic-train
     description: |
       Repository from which to install. May be one of the following:
       distro (default), ppa:somecustom/ppa, a deb url sources entry or a
@@ -25,7 +25,6 @@ options:
       .
       NOTE: updating this setting to a source that is known to provide
       a later version of OpenStack will trigger a software upgrade.
-      .
   python-version:
     type: int
     default: 3
@@ -34,10 +33,6 @@ options:
     type: string
     default: "deb [trusted=yes] https://apt.fury.io/triliovault-python3/ /"
     description: Repository address of triliovault packages
-  openstack-pkg-source:
-    type: string
-    default: "cloud-archive:train"
-    description: Repository address of openstack packages
   public-port:
     type: int
     default: 8784
