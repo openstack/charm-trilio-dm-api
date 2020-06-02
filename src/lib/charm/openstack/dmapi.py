@@ -13,9 +13,9 @@
 import collections
 import os
 
-import charms_openstack.charm as charm
 import charms_openstack.adapters as adapters
 import charms_openstack.ip as os_ip
+import charms_openstack.plugins as plugins
 
 import charmhelpers.contrib.openstack.utils as ch_utils
 import charmhelpers.core.hookenv as hookenv
@@ -51,7 +51,7 @@ class DmapiAdapters(adapters.OpenStackAPIRelationAdapters):
     }
 
 
-class DmapiCharm(charm.HAOpenStackCharm):
+class DmapiCharm(plugins.TrilioVaultCharm):
 
     # Internal name of charm + keystone endpoint
     service_name = "dmapi"
@@ -112,13 +112,6 @@ class DmapiCharm(charm.HAOpenStackCharm):
         if release is None:
             release = ch_utils.os_release("python-keystonemiddleware")
         super(DmapiCharm, self).__init__(release=release, **kwargs)
-
-    def configure_source(self):
-        with open(
-            "/etc/apt/sources.list.d/" "trilio-gemfury-sources.list", "w"
-        ) as tsources:
-            tsources.write(hookenv.config("triliovault-pkg-source"))
-        super().configure_source()
 
     def get_amqp_credentials(self):
         return ("dmapi", "openstack")
