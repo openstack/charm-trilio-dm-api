@@ -9,12 +9,13 @@ description: |
   This charm provides the TrilioVault Data Mover API which
   forms part of the TrilioVault solution.
 tags:
-  - openstack
-  - storage
-  - backup
+- openstack
+- storage
+- backup
 provides:
   dm-api:
     interface: dm-api
 series:
-  - xenial
-  - bionic
+- xenial
+- bionic
+- groovy
