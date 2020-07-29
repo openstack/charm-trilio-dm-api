@@ -18,3 +18,5 @@ provides:
 series:
 - xenial
 - bionic
+- focal
+- groovy
