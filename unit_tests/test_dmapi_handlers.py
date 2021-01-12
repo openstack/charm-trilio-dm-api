@@ -106,18 +106,22 @@ class TestDmapiHandlers(test_utils.PatchHelper):
         when_patterns = {
             "render_config": (
                 "shared-db.available",
+                "dmapi-db.ready",
                 "identity-service.available",
                 "amqp.available",
             ),
             "init_db": ("config.rendered",),
             "cluster_connected": ("ha.connected",),
+            "check_dmapi_db": ("shared-db.available",),
         }
-        when_not_patterns = {}
+        when_not_patterns = {
+            "check_dmapi_db": ("dmapi-db.ready",),
+        }
         when_any_patterns = {
             "install_source_changed": (
                 "config.changed.triliovault-pkg-source",
                 "config.changed.openstack-origin"
-            )
+            ),
         }
         # check the when hooks are attached to the expected functions
         for t, p in [

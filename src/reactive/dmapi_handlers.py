@@ -30,6 +30,7 @@ charm.use_defaults(
 )
 
 
+@reactive.when("dmapi-db.ready")
 @reactive.when("shared-db.available")
 @reactive.when("identity-service.available")
 @reactive.when("amqp.available")
@@ -39,6 +40,7 @@ def render_config(*args):
     """
     with charm.provide_charm_instance() as charm_class:
         charm_class.upgrade_if_available(args)
+    with charm.provide_charm_instance() as charm_class:
         charm_class.render_with_interfaces(args)
         charm_class.assess_status()
     reactive.set_state("config.rendered")
@@ -57,6 +59,19 @@ def cluster_connected(hacluster):
     with charm.provide_charm_instance() as charm_class:
         charm_class.configure_ha_resources(hacluster)
         charm_class.assess_status()
+
+
+@reactive.when("shared-db.available")
+@reactive.when_not("dmapi-db.ready")
+def check_dmapi_db():
+    db_ep = reactive.endpoint_from_flag('shared-db.available')
+    if db_ep:
+        if db_ep.password(prefix='dmapi'):
+            reactive.set_state("dmapi-db.ready")
+        else:
+            with charm.provide_charm_instance() as instance:
+                for db in instance.get_database_setup():
+                    db_ep.configure(**db)
 
 
 @reactive.when_any("config.changed.triliovault-pkg-source",
