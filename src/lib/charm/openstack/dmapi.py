@@ -16,12 +16,15 @@ import os
 import charms_openstack.adapters as adapters
 import charms_openstack.ip as os_ip
 import charms_openstack.plugins as plugins
+import charmhelpers.contrib.openstack.utils as os_utils
 
 import charmhelpers.contrib.openstack.utils as ch_utils
 import charmhelpers.core.hookenv as hookenv
 
 DMAPI_DIR = "/etc/dmapi"
 DMAPI_CONF = os.path.join(DMAPI_DIR, "dmapi.conf")
+
+plugins.trilio.make_trilio_handlers()
 
 
 class DmapiDBAdapter(adapters.DatabaseRelationAdapter):
@@ -36,6 +39,11 @@ class DmapiDBAdapter(adapters.DatabaseRelationAdapter):
     def dmapi_nova_api_uri(self):
         """URI for nova_api DB"""
         return self.get_uri(prefix="dmapinovaapi")
+
+    @property
+    def dmapi_uri(self):
+        """URI for dmapi DB"""
+        return self.get_uri(prefix="dmapi")
 
 
 class DmapiAdapters(adapters.OpenStackAPIRelationAdapters):
@@ -59,6 +67,7 @@ class DmapiCharm(plugins.TrilioVaultCharm):
 
     # First release supported
     release = "queens"
+    trilio_release = "4.0"
 
     # Init services the charm manages
     services = ["tvault-datamover-api"]
@@ -102,7 +111,10 @@ class DmapiCharm(plugins.TrilioVaultCharm):
         "python3-dmapi": collections.OrderedDict(
             [("3", "stein"), ("4", "train")]
         ),
+        "nova-common": os_utils.PACKAGE_CODENAMES["nova-common"],
     }
+
+    os_release_pkg = 'nova-common'
 
     def __init__(self, release=None, **kwargs):
         """Custom initialiser for class
@@ -110,7 +122,7 @@ class DmapiCharm(plugins.TrilioVaultCharm):
         ch_utils.os_release() function.
         """
         if release is None:
-            release = ch_utils.os_release("python-keystonemiddleware")
+            release = ch_utils.os_release("nova-common")
         super(DmapiCharm, self).__init__(release=release, **kwargs)
 
     def get_amqp_credentials(self):
@@ -123,6 +135,11 @@ class DmapiCharm(plugins.TrilioVaultCharm):
                 "database": "nova_api",
                 "username": "nova",
                 "prefix": "dmapinovaapi",
+            },
+            {
+                "database": "dmapi",
+                "username": "dmapi",
+                "prefix": "dmapi",
             },
         ]
 
@@ -138,18 +155,39 @@ class DmapiCharm(plugins.TrilioVaultCharm):
     def internal_url(self):
         return "{}/v2".format(super().internal_url)
 
+    @classmethod
+    def trilio_version_package(cls):
+        pkg = "dmapi"
+        if hookenv.config("python-version") == 3:
+            pkg = "python3-dmapi"
+        return pkg
+
     @property
     def packages(self):
         if hookenv.config("python-version") == 3:
             return ["python3-nova", "python3-dmapi"]
         return ["python-nova", "dmapi"]
 
-    @property
-    def version_package(self):
-        if hookenv.config("python-version") == 3:
-            return "python3-dmapi"
-        return "dmapi"
 
-    @property
-    def release_pkg(self):
-        return self.version_package
+class DmapiCharmQueens41(DmapiCharm):
+
+    # First release supported
+    release = "queens"
+    trilio_release = "4.1"
+    sync_cmd = ['dmapi-dbsync']
+
+    def __init__(self, release=None, **kwargs):
+        """Custom initialiser for class
+        """
+        if release is None:
+            release = ch_utils.os_release("python-keystonemiddleware")
+        super().__init__(release=release, **kwargs)
+
+    def get_database_setup(self):
+        return [
+            {
+                "database": "dmapi",
+                "username": "dmapi",
+                "prefix": "dmapi",
+            },
+        ]
