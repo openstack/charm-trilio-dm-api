@@ -155,6 +155,10 @@ class DmapiCharm(plugins.TrilioVaultCharm):
     def internal_url(self):
         return "{}/v2".format(super().internal_url)
 
+    @property
+    def python_version(self):
+        return hookenv.config("python-version")
+
     @classmethod
     def trilio_version_package(cls):
         pkg = "dmapi"
@@ -164,9 +168,23 @@ class DmapiCharm(plugins.TrilioVaultCharm):
 
     @property
     def packages(self):
-        if hookenv.config("python-version") == 3:
+        if self.python_version == 3:
             return ["python3-nova", "python3-dmapi"]
         return ["python-nova", "dmapi"]
+
+
+class DmapiCharmiUssur40(DmapiCharm):
+
+    # First release supported
+    release = "ussuri"
+    trilio_release = "4.0"
+
+    @property
+    def packages(self):
+        if self.python_version == 3:
+            return ["python3-nova", "python3-dmapi",
+                    "python3-retrying"]
+        return ["python-nova", "dmapi", "python-retrying"]
 
 
 class DmapiCharmQueens41(DmapiCharm):
@@ -191,3 +209,10 @@ class DmapiCharmQueens41(DmapiCharm):
                 "prefix": "dmapi",
             },
         ]
+
+
+class DmapiCharmUssuri41(DmapiCharmQueens41):
+
+    # First release supported
+    release = "ussuri"
+    trilio_release = "4.1"
