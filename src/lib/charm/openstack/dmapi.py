@@ -105,6 +105,7 @@ class DmapiCharm(plugins.TrilioVaultCharm):
 
     user = "root"
     group = "dmapi"
+    python_version = 3
 
     package_codenames = {
         "dmapi": collections.OrderedDict([("3", "stein")]),
