@@ -1,0 +1,73 @@
+- project:
+    templates:
+      - charm-unit-jobs
+    check:
+      jobs:
+      - charm-build
+      - bionic-queens-40_trilio-api
+      - bionic-stein-40_trilio-api
+      - bionic-train-40_trilio-api
+      - bionic-ussuri-40_trilio-api
+      - bionic-queens-41_trilio-api
+      - bionic-stein-41_trilio-api
+      - bionic-train-41_trilio-api
+      - bionic-ussuri-41_trilio-api
+    vars:
+      needs_charm_build: true
+      charm_build_name: trilio-dm-api
+- job:
+    name: bionic-train-40_trilio-api
+    parent: func-target
+    dependencies:
+      - osci-lint
+      - tox-py35
+      - tox-py36
+      - tox-py37
+      - tox-py38
+    vars:
+      tox_extra_args: bionic-train-40
+- job:
+    name: bionic-stein-40_trilio-api
+    parent: func-target
+    dependencies: &smoke-jobs
+      - bionic-train-40_trilio-api
+    vars:
+      tox_extra_args: bionic-stein-40
+- job:
+    name: bionic-queens-40_trilio-api
+    parent: func-target
+    dependencies: *smoke-jobs
+    vars:
+      tox_extra_args: bionic-queens-40
+
+- job:
+    name: bionic-ussuri-40_trilio-api
+    parent: func-target
+    dependencies: *smoke-jobs
+    vars:
+      tox_extra_args: bionic-ussuri-40
+- job:
+    name: bionic-train-41_trilio-api
+    parent: func-target
+    dependencies: *smoke-jobs
+    vars:
+      tox_extra_args: bionic-train-41
+- job:
+    name: bionic-stein-41_trilio-api
+    parent: func-target
+    dependencies: *smoke-jobs
+    vars:
+      tox_extra_args: bionic-stein-41
+- job:
+    name: bionic-queens-41_trilio-api
+    parent: func-target
+    dependencies: *smoke-jobs
+    vars:
+      tox_extra_args: bionic-queens-41
+
+- job:
+    name: bionic-ussuri-41_trilio-api
+    parent: func-target
+    dependencies: *smoke-jobs
+    vars:
+      tox_extra_args: bionic-ussuri-41
