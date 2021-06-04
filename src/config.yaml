@@ -45,3 +45,8 @@ options:
     type: int
     default: 8784
     description: DataMover API admin endpoint port
+  dmapi-workers:
+    type: int
+    default: 16
+    description: |
+      Number of dmapi workers. This replaces the previous worker-muliplier option.
