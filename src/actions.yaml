@@ -1,0 +1,4 @@
+update-trilio:
+  description: |
+    Update the trilio packages and run post-update steps such as rerender
+    configuration files and run any upgrade tasks such as database migrations.
