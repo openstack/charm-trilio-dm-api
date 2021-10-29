@@ -16,7 +16,5 @@ provides:
   dm-api:
     interface: dm-api
 series:
-- xenial
 - bionic
 - focal
-- groovy
