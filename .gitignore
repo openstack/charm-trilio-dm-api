@@ -10,3 +10,4 @@ __pycache__
 func-results.json
 tests/id_rsa_zaza
 build
+*.charm
