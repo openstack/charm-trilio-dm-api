@@ -1,16 +1,12 @@
 - project:
     templates:
-      - charm-yoga-unit-jobs
+      - charm-unit-jobs-py36
+      - charm-unit-jobs-py38
     check:
       jobs:
       - charm-build
       - bionic-queens-40_trilio-api
-      - bionic-stein-40_trilio-api
       - bionic-queens-41_trilio-api
-      - bionic-stein-41_trilio-api
-      - bionic-train-40_trilio-api
-      - bionic-ussuri-40_trilio-api
-      - bionic-train-41_trilio-api
       - bionic-ussuri-41_trilio-api
       - focal-ussuri-41_trilio-api
     vars:
@@ -35,38 +31,10 @@
     vars:
       tox_extra_args: bionic-ussuri-41
 - job:
-    name: bionic-train-41_trilio-api
-    parent: func-target
-    dependencies:
-      - focal-ussuri-41_trilio-api
-    vars:
-      tox_extra_args: bionic-train-41
-- job:
-    name: bionic-train-40_trilio-api
-    parent: func-target
-    dependencies:
-      - bionic-ussuri-41_trilio-api
-    vars:
-      tox_extra_args: bionic-train-40
-- job:
-    name: bionic-stein-41_trilio-api
-    parent: func-target
-    dependencies:
-      - bionic-train-41_trilio-api
-    vars:
-      tox_extra_args: bionic-stein-41
-- job:
-    name: bionic-stein-40_trilio-api
-    parent: func-target
-    dependencies:
-      - bionic-train-40_trilio-api
-    vars:
-      tox_extra_args: bionic-stein-40
-- job:
     name: bionic-queens-41_trilio-api
     parent: func-target
     dependencies:
-      - bionic-stein-41_trilio-api
+      - focal-ussuri-41_trilio-api
     vars:
       tox_extra_args: bionic-queens-41
 
@@ -74,6 +42,6 @@
     name: bionic-queens-40_trilio-api
     parent: func-target
     dependencies:
-      - bionic-stein-40_trilio-api
+      - bionic-queens-41_trilio-api
     vars:
       tox_extra_args: bionic-queens-40
