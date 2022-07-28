@@ -10,6 +10,7 @@
       - bionic-ussuri-42_trilio-api
       - focal-ussuri-41_trilio-api
       - focal-ussuri-42_trilio-api
+      - focal-wallaby-42_trilio-api
     vars:
       needs_charm_build: true
       charm_build_name: trilio-dm-api
@@ -31,6 +32,13 @@
       - focal-ussuri-42_trilio-api
     vars:
       tox_extra_args: focal-ussuri-41
+- job:
+    name: focal-wallaby-42_trilio-api
+    parent: func-target
+    dependencies:
+      - focal-ussuri-42_trilio-api
+    vars:
+      tox_extra_args: focal-wallaby-42
 - job:
     name: bionic-ussuri-42_trilio-api
     parent: func-target
