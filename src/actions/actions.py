@@ -38,10 +38,13 @@ def update_trilio(*args):
     """Run setup after Trilio upgrade.
     """
     with charms_openstack.charm.provide_charm_instance() as trilio_charm:
-        interfaces = ["shared-db", "identity-service", "amqp"]
+        interfaces = ["shared-db", "amqp"]
         endpoints = [
             reactive.relations.endpoint_from_flag("{}.available".format(i))
             for i in interfaces]
+        # identity-service is of type reactive.Endpoint rather than
+        # reactive.RelationBase and needs a different method to instantiate it.
+        endpoints.append(reactive.endpoint_from_name("identity-service"))
         trilio_charm.run_trilio_upgrade(endpoints)
         trilio_charm._assess_status()
 
@@ -54,6 +57,7 @@ ACTIONS = {
 
 
 def main(args):
+    hookenv._run_atstart()
     action_name = os.path.basename(args[0])
     try:
         action = ACTIONS[action_name]
@@ -64,6 +68,7 @@ def main(args):
             action(args)
         except Exception as e:
             hookenv.function_fail(str(e))
+    hookenv._run_atexit()
 
 
 if __name__ == "__main__":
